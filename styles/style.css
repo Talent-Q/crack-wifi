@@ -1,0 +1,65 @@
+/* body */
+body {
+    margin-top: 0;
+    background-image: linear-gradient(90deg, rgba(180, 180, 180, 0.15) 10%, rgba(0, 0, 0, 0) 10%),
+    linear-gradient(rgba(180, 180, 180, 0.15) 10%, rgba(0, 0, 0, 0) 10%);
+    background-size: 10px 10px;
+}
+
+/* container */
+#container {
+    margin: 0 10%;
+    padding: 1% 5%;
+    background-color: rgb(214, 244, 247, 0.65);
+}
+
+/* header */
+header h1 {
+    text-align: center;
+}
+header p {
+    text-align: right;
+}
+
+/* section */
+section {
+    padding-bottom: 20%;
+}
+
+div.first {
+    
+}
+
+div.second {
+    padding-left: 1em;
+}
+
+p.indent {
+    padding-left: 1em;
+    text-indent: 2em;
+}
+
+/* img */
+div.img {
+    text-align: center;
+}
+
+div.img img {
+    width: 80%;
+}
+
+/* span */
+span.question {
+    color: red;
+    font-size: 0.7em;
+}
+
+span.del {
+    text-decoration: line-through;
+}
+
+/* footer */
+footer {
+    text-align: center;
+    font-size: x-small;
+}

